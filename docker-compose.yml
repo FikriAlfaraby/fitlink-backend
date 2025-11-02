@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  fitlink-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - API_PREFIX=api/v1
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - fitlink-network
+
+  # Optional: Add a reverse proxy (uncomment if needed)
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - fitlink-backend
+  #   networks:
+  #     - fitlink-network
+
+networks:
+  fitlink-network:
+    driver: bridge
+
+volumes:
+  fitlink-data:

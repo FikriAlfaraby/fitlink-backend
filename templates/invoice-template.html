@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gym Invoice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            padding: 40px;
+            background: #fff;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .invoice-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .gym-info h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        
+        .gym-info p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .invoice-title {
+            text-align: right;
+        }
+        
+        .invoice-title h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-title p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .invoice-details {
+            padding: 40px;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .detail-section h3 {
+            font-size: 14px;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .detail-section p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .invoice-table thead {
+            background: #f8f9fa;
+        }
+        
+        .invoice-table th {
+            padding: 15px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .invoice-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+        
+        .invoice-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        .summary-box {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            font-size: 14px;
+        }
+        
+        .summary-row.total {
+            border-top: 2px solid #667eea;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .invoice-footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .invoice-footer p {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-footer .highlight {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="invoice-header">
+            <div class="gym-info">
+                <h1>{{gymName}}</h1>
+                <p>{{gymAddress}}</p>
+                <p>{{gymPhone}} | {{gymEmail}}</p>
+            </div>
+            <div class="invoice-title">
+                <h2>INVOICE</h2>
+                <p>{{invoicePeriod}}</p>
+            </div>
+        </div>
+        
+        <div class="invoice-details">
+            <div class="details-grid">
+                <div class="detail-section">
+                    <h3>Invoice Details</h3>
+                    <p><strong>Invoice Period:</strong> {{invoicePeriod}}</p>
+                    <p><strong>Generated Date:</strong> {{generatedDate}}</p>
+                    <p><strong>Total Transactions:</strong> {{totalTransactions}}</p>
+                </div>
+                <div class="detail-section">
+                    <h3>Gym Information</h3>
+                    <p><strong>Gym ID:</strong> {{gymId}}</p>
+                    <p><strong>Gym Code:</strong> {{gymCode}}</p>
+                    <p><strong>Active Members:</strong> {{totalMembers}}</p>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 20px; margin-bottom: 15px; color: #667eea; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Transaction History</h3>
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Transaction ID</th>
+                        <th>Member</th>
+                        <th>Description</th>
+                        <th class="text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{invoiceItems}}
+                </tbody>
+            </table>
+            
+            <h3 style="margin-top: 40px; margin-bottom: 15px; color: #667eea; font-size: 16px; text-transform: uppercase; letter-spacing: 1px;">Active Members</h3>
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Membership Type</th>
+                        <th>Join Date</th>
+                        <th>Expiry Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{memberList}}
+                </tbody>
+            </table>
+            
+            <div class="summary-section">
+                <div class="summary-box">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span>{{subtotal}}</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Tax (0%):</span>
+                        <span>{{tax}}</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span>{{total}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="invoice-footer">
+            <p><strong class="highlight">Thank you for your business!</strong></p>
+            <p>This is a computer-generated invoice and does not require a signature.</p>
+            <p>For any queries, please contact us at {{gymEmail}} or {{gymPhone}}</p>
+        </div>
+    </div>
+</body>
+</html>
