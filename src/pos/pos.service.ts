@@ -20,7 +20,7 @@ import {
   TransactionType,
   ReferenceType,
 } from '@prisma/client';
-import { FEE_APP_EACH_TRANSACTION } from '@/common';
+import { FEE_APP_EACH_TRANSACTION, BUSINESS } from '@/common';
 import { countMonthsBetween } from '@/common/utils/count-date';
 import { WalletService } from '@/wallet/wallet.service';
 
@@ -263,7 +263,14 @@ export class PosService {
         throw new BadRequestException(`Wallet for ${walletType} is not active`);
       }
 
-      const gymWalletBalance = gymWallet.currentBalance.toNumber() + total;
+      // QRIS income ditanggung gym owner: dipotong fee provider (default 1%) dari saldo yang masuk.
+      // Payment method lain (cash/card/transfer) tidak dipotong.
+      const feePercentage =
+        walletType === WalletType.qris ? BUSINESS.WALLET.DEFAULT_QRIS_FEE_PERCENTAGE : 0;
+      const feeAmount = Number((total * (feePercentage / 100)).toFixed(2));
+      const netAmount = Number((total - feeAmount).toFixed(2));
+
+      const gymWalletBalance = gymWallet.currentBalance.toNumber() + netAmount;
 
       await prisma.wallet.update({
         where: {
@@ -273,8 +280,9 @@ export class PosService {
         },
         data: {
           currentBalance: gymWalletBalance,
-          totalIncome: gymWallet.totalIncome.toNumber() + total,
-          todayIncome: gymWallet.todayIncome.toNumber() + total,
+          totalIncome: gymWallet.totalIncome.toNumber() + netAmount,
+          todayIncome: gymWallet.todayIncome.toNumber() + netAmount,
+          totalFees: gymWallet.totalFees.toNumber() + feeAmount,
           updatedAt: new Date(),
         },
       });
@@ -282,11 +290,15 @@ export class PosService {
       await prisma.walletTransaction.create({
         data: {
           amount: total,
-          netAmount: total,
+          feeAmount,
+          netAmount,
           walletId: gymWallet.id,
           transactionType: TransactionType.income,
           referenceType: ReferenceType.pos_transaction,
-          // description: `POS Transaction ${posTransaction.id}`,
+          description:
+            feeAmount > 0
+              ? `POS Transaction ${posTransaction.id} (QRIS fee ${feePercentage}%: -Rp${feeAmount.toLocaleString('id-ID')})`
+              : `POS Transaction ${posTransaction.id}`,
           processedAt: new Date(),
         },
       });
