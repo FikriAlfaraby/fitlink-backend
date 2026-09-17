@@ -1,20 +1,20 @@
 /**
- * Koreksi retroaktif fee QRIS pada wallet_transactions lama.
+ * Retroactive correction of QRIS fees on old wallet_transactions.
  *
- * Latar belakang: sebelum fix ini, transaksi income QRIS dari POS dicatat
- * tanpa potongan fee (feeAmount = 0, netAmount = amount penuh). Fee QRIS
- * seharusnya 1% dan ditanggung gym owner (dipotong dari saldo yang masuk wallet).
+ * Background: before this fix, QRIS income transactions from POS were recorded
+ * without any fee deduction (feeAmount = 0, netAmount = full amount). The QRIS fee
+ * should be 1% and is borne by the gym owner (deducted from the balance credited to the wallet).
  *
- * Script ini:
- *  1. Mencari semua WalletTransaction dengan wallet.walletType = qris,
- *     transactionType = income, referenceType = pos_transaction, dan feeAmount = 0.
- *  2. Menghitung ulang feeAmount (1% dari amount) dan netAmount yang seharusnya.
- *  3. Secara default berjalan DRY RUN: hanya mencetak laporan perubahan yang akan
- *     dilakukan, TIDAK menulis apa pun ke database.
- *  4. Jalankan dengan --apply untuk benar-benar menerapkan koreksi (transaksi +
- *     agregat wallet: currentBalance, totalIncome, todayIncome, totalFees).
+ * This script:
+ *  1. Finds every WalletTransaction with wallet.walletType = qris,
+ *     transactionType = income, referenceType = pos_transaction, and feeAmount = 0.
+ *  2. Recalculates the correct feeAmount (1% of amount) and netAmount.
+ *  3. Runs as a DRY RUN by default: it only prints a report of the changes that
+ *     would be made and writes NOTHING to the database.
+ *  4. Run with --apply to actually apply the correction (transaction +
+ *     wallet aggregates: currentBalance, totalIncome, todayIncome, totalFees).
  *
- * Cara pakai:
+ * Usage:
  *   npx ts-node -r tsconfig-paths/register scripts/correct-qris-fee.ts
  *   npx ts-node -r tsconfig-paths/register scripts/correct-qris-fee.ts --apply
  *   npx ts-node -r tsconfig-paths/register scripts/correct-qris-fee.ts --gym-id=<uuid>
@@ -24,7 +24,7 @@ import { PrismaClient, WalletType, TransactionType, ReferenceType } from '@prism
 
 const prisma = new PrismaClient();
 
-const QRIS_FEE_PERCENTAGE = 1; // 1% — harus selalu sinkron dengan BUSINESS.WALLET.DEFAULT_QRIS_FEE_PERCENTAGE
+const QRIS_FEE_PERCENTAGE = 1; // 1% — must always stay in sync with BUSINESS.WALLET.DEFAULT_QRIS_FEE_PERCENTAGE
 
 function formatIDR(amount: number): string {
   return `Rp ${amount.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -37,11 +37,11 @@ async function main() {
   const gymId = gymIdArg ? gymIdArg.split('=')[1] : undefined;
 
   console.log('='.repeat(70));
-  console.log(`Koreksi Fee QRIS — Mode: ${apply ? '⚠️  APPLY (menulis ke DB)' : '🔍 DRY RUN (tidak ada perubahan)'}`);
+  console.log(`QRIS Fee Correction — Mode: ${apply ? '⚠️  APPLY (writes to DB)' : '🔍 DRY RUN (no changes)'}`);
   if (gymId) console.log(`Filter gymId: ${gymId}`);
   console.log('='.repeat(70));
 
-  // Ambil semua transaksi income QRIS dari POS yang belum ada potongan fee.
+  // Fetch every QRIS income transaction from POS that has no fee deducted yet.
   const transactions = await prisma.walletTransaction.findMany({
     where: {
       transactionType: TransactionType.income,
@@ -63,14 +63,14 @@ async function main() {
   });
 
   if (transactions.length === 0) {
-    console.log('\n✅ Tidak ada transaksi QRIS yang perlu dikoreksi.');
+    console.log('\n✅ No QRIS transactions need correction.');
     await prisma.$disconnect();
     return;
   }
 
-  console.log(`\nDitemukan ${transactions.length} transaksi QRIS tanpa potongan fee.\n`);
+  console.log(`\nFound ${transactions.length} QRIS transactions with no fee deducted.\n`);
 
-  // Kelompokkan dampak per wallet supaya agregat wallet bisa dikoreksi sekali per wallet.
+  // Group the impact per wallet so wallet aggregates can be corrected once per wallet.
   const walletImpact = new Map<
     string,
     { gymName: string; walletId: string; totalFeeCorrection: number; count: number }
@@ -121,28 +121,28 @@ async function main() {
   }
 
   console.log('\n' + '-'.repeat(70));
-  console.log('Ringkasan per wallet (gym):');
+  console.log('Summary per wallet (gym):');
   for (const impact of walletImpact.values()) {
     console.log(
-      `  ${impact.gymName}: ${impact.count} transaksi, total fee yang seharusnya dipotong = ${formatIDR(impact.totalFeeCorrection)}`,
+      `  ${impact.gymName}: ${impact.count} transactions, total fee that should have been deducted = ${formatIDR(impact.totalFeeCorrection)}`,
     );
   }
   console.log('-'.repeat(70));
-  console.log(`TOTAL fee yang ${apply ? 'sudah dipotong' : 'akan dipotong'} dari saldo gym owner: ${formatIDR(totalFeeCorrection)}`);
-  console.log(`Total transaksi ${apply ? 'dikoreksi' : 'akan dikoreksi'}: ${transactions.length}`);
+  console.log(`TOTAL fee ${apply ? 'deducted' : 'to be deducted'} from the gym owner balance: ${formatIDR(totalFeeCorrection)}`);
+  console.log(`Total transactions ${apply ? 'corrected' : 'to be corrected'}: ${transactions.length}`);
 
   if (!apply) {
-    console.log('\n⚠️  Ini baru DRY RUN. Tidak ada perubahan yang ditulis ke database.');
-    console.log('   Jalankan ulang dengan --apply setelah hasil di atas dikonfirmasi untuk menerapkan koreksi.');
+    console.log('\n⚠️  This was only a DRY RUN. No changes were written to the database.');
+    console.log('   Re-run with --apply after confirming the results above to apply the correction.');
   } else {
-    console.log('\n✅ Koreksi selesai diterapkan ke database.');
+    console.log('\n✅ Correction successfully applied to the database.');
   }
 
   await prisma.$disconnect();
 }
 
 main().catch(async err => {
-  console.error('Gagal menjalankan koreksi:', err);
+  console.error('Failed to run the correction:', err);
   await prisma.$disconnect();
   process.exit(1);
 });

@@ -263,8 +263,8 @@ export class PosService {
         throw new BadRequestException(`Wallet for ${walletType} is not active`);
       }
 
-      // QRIS income ditanggung gym owner: dipotong fee provider (default 1%) dari saldo yang masuk.
-      // Payment method lain (cash/card/transfer) tidak dipotong.
+      // QRIS income is borne by the gym owner: the provider fee (default 1%) is deducted
+      // from the incoming balance. Other payment methods (cash/card/transfer) are not affected.
       const feePercentage =
         walletType === WalletType.qris ? BUSINESS.WALLET.DEFAULT_QRIS_FEE_PERCENTAGE : 0;
       const feeAmount = Number((total * (feePercentage / 100)).toFixed(2));

@@ -137,7 +137,7 @@ export const BUSINESS = {
   WALLET: {
     MIN_WITHDRAWAL: 10000, // IDR
     MAX_DAILY_WITHDRAWAL: 5000000, // IDR
-    DEFAULT_QRIS_FEE_PERCENTAGE: 1, // 1% dipotong dari saldo gym owner saat income QRIS masuk
+    DEFAULT_QRIS_FEE_PERCENTAGE: 1, // 1% deducted from the gym owner balance when QRIS income comes in
     SETTLEMENT_DELAY_HOURS: 24,
   },
   STAFF: {
